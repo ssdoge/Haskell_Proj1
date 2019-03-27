@@ -15,28 +15,30 @@ isOctave num = case num of
 	'2' -> True
 	'3' -> True
 	otherwise -> False
-transNote :: Char -> Note
+transNote :: Char -> Maybe Note
 transNote x 
-	| x == 'A' = A
-	| x == 'B' = B
-	| x == 'C' = C
-	| x == 'D' = D
-	| x == 'E' = E
-	| x == 'F' = F
-	| x == 'G' = G
+	| x == 'A' = Just A
+	| x == 'B' = Just B
+	| x == 'C' = Just C
+	| x == 'D' = Just D
+	| x == 'E' = Just E
+	| x == 'F' = Just F
+	| x == 'G' = Just G
+	| otherwise = Nothing
 
-
-transOctave:: Char -> Octave
+transOctave:: Char -> Maybe Octave
 transOctave x 
-	| x == '1' = One
-	| x == '2' = Two
-	| x == '3' = Three
-	
+	| x == '1' = Just One
+	| x == '2' = Just Two
+	| x == '3' = Just Three
+	| otherwise = Nothing
 
 toPitch :: String -> Maybe Pitch
 toPitch (x:y:[])
 	| isNote x == True && isOctave y == True = Just pitch
   	| otherwise = toPitch []
   	where pitch = Pitch (transNote x) (transOctave y)
-  	
+  	{-where 
+  		n = transNote x
+  		o = transOctave y -}
 toPitch _ = Nothing
