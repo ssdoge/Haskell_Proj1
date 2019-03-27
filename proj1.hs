@@ -1,6 +1,28 @@
 data Note = A | B | C | D | E | F | G deriving (Eq,Show,Read)
 data Octave = One | Two | Three deriving (Eq,Show,Read)
-data Pitch = Pitch Note Octave deriving Eq 
+data Pitch = Pitch (Maybe Note) (Maybe Octave) deriving (Eq)
+instance Show Pitch where show = showPitch
+--show
+showNote :: Note -> Maybe Char
+showNote x  
+	| x == A = Just 'A'
+	| x == B = Just 'B'
+	| x == C = Just 'C'
+	| x == D = Just 'D'
+	| x == E = Just 'E'
+	| x == F = Just 'F'
+	| x == G = Just 'G'
+	| otherwise = Nothing
+showOctave :: Octave -> Maybe Char
+showOctave x 
+	| x == One = Just '1'
+	| x == Two = Just '2'
+	| x == Three = Just '3'
+	| otherwise = Nothing
+
+showPitch :: Pitch ->  String
+showPitch (Pitch n o) =	 (showNote n):(showOctave o):[] 
+showPitch (Pitch _ _ ) = Nothing
 
 -- toPitch
 isNote :: Char ->Bool
@@ -38,7 +60,6 @@ toPitch (x:y:[])
 	| isNote x == True && isOctave y == True = Just pitch
   	| otherwise = toPitch []
   	where pitch = Pitch (transNote x) (transOctave y)
-  	{-where 
-  		n = transNote x
-  		o = transOctave y -}
 toPitch _ = Nothing
+
+
