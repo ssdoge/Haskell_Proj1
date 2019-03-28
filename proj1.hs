@@ -37,21 +37,45 @@ toPitch (x:y:[])
 toPitch _ = Nothing
 
 --feedBack function: x:xs for target y:ys for guess
---singlePitchMatch: first arg is target , the second is single guess
+
+{--singlePitchMatch: first arg is target , the second is single guess
 singlePitchMatch :: [Pitch] -> Pitch -> Int
 singlePitchMatch [] _ = 0
 singlePitchMatch ((Pitch n1 o1):xs) (Pitch n2 o2)
 	| n1 == n2 && o1 == o2 = 1
 	| otherwise = singlePitchMatch xs (Pitch n2 o2)
+-}
 
 --pitchMatch: count matched Pitch for entire guess 
 pitchMatch :: [Pitch] -> [Pitch] -> Int
 pitchMatch _ [] = 0
-pitchMatch target (x:xs) = singlePitchMatch target x + pitchMatch target xs
+pitchMatch target (x:xs) =
+	length (filter (x==) target) + pitchMatch target xs
+
+--filter [Pitch]
+filterPitch :: [Pitch] -> [Pitch] -> [Pitch]
+filterPitch _ [] =[]
+filterPitch target (x:xs) = 
+	filter (x==) target ++ filterPitch target xs
+
 
 --noteMatch:
-noteMatch :: 
+singleNoteOctaveMatch :: Pitch -> Pitch -> (Bool,Bool)
+singleNoteOctaveMatch (Pitch n1 o1) (Pitch n2 o2) 
+	| n1 == n2 && o1 /= o2 = (True, False)
+	| n1 /= n2 && o1 == o2 = (False, True)
+	| otherwise = (False, False)
 
+noteMatch :: [Pitch] -> [Pitch] -> Int
+noteMatch _ [] = 0
+noteMatch target (x:xs) = 
+	length (filter ( (True,False)== ) (map (singleNoteOctaveMatch x) target)) + 
+		noteMatch target xs
+octaveMatch :: [Pitch] -> [Pitch] -> Int
+octaveMatch _ [] = 0
+octaveMatch target (x:xs) =
+	length (filter ( (False,True)== ) (map (singleNoteOctaveMatch x) target)) +
+		octaveMatch target xs
 {-
 feedBack :: [Pitch] -> [Pitch] -> (Int, Int, Int)
 feedBack x y = (pitchMatch x y,  )  
