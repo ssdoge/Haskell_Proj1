@@ -1,67 +1,35 @@
+import Data.Maybe
+import Data.Tuple
+
 data Note = A | B | C | D | E | F | G deriving (Eq,Show,Read)
-data Octave = One | Two | Three deriving (Eq,Show,Read)
---data Pitch = Pitch (Maybe Note) (Maybe Octave) deriving (Eq)
-data Pitch = Pitch  Note Octave deriving (Eq)
+data Octave = One | Two | Three deriving (Eq,Read,Show)
+data Pitch = Pitch Note Octave deriving (Eq)
+
 instance Show Pitch where show = showPitch
---show
-{-showNote :: Note -> Maybe Char
-showNote x  
-	| x == A = Just 'A'
-	| x == B = Just 'B'
-	| x == C = Just 'C'
-	| x == D = Just 'D'
-	| x == E = Just 'E'
-	| x == F = Just 'F'
-	| x == G = Just 'G'
-	| otherwise = Nothing
-showOctave :: Octave -> Maybe Char
-showOctave x 
-	| x == One = Just '1'
-	| x == Two = Just '2'
-	| x == Three = Just '3'
-	| otherwise = Nothing
--}
-showPitch :: Pitch ->  String
-showPitch (Pitch n o) =	((head.show) n):((head.show) o):[] 
---showPitch (Pitch _ _ ) = Nothing
 
-{-
--- toPitch
-isNote :: Char ->Bool
-isNote c 
-	| c == 'A' || c == 'B' || c == 'C' || c == 'D' 
-		|| c == 'E' || c == 'F' || c == 'G' = True
-	| otherwise = False
+-- Define the tables for changing datatpye
+tableOfoctave = [(One,'1'),(Two,'2'),(Three,'3')]
+tableOfNote = [(A,'A'),(B,'B'),(C,'C'),(D,'D'),(E,'E'),(F,'F'),(G,'G')]
 
-isOctave :: Char ->Bool 
-isOctave num = case num of
-	'1' -> True
-	'2' -> True
-	'3' -> True
-	otherwise -> False
-transNote :: Char -> Maybe Note
-transNote x 
-	| x == 'A' = Just A
-	| x == 'B' = Just B
-	| x == 'C' = Just C
-	| x == 'D' = Just D
-	| x == 'E' = Just E
-	| x == 'F' = Just F
-	| x == 'G' = Just G
-	| otherwise = Nothing
+-- functions for changing datatype from Octave <-> Char
+fromOctave :: Octave -> Char
+fromOctave x = fromJust (lookup x tableOfoctave)
 
-transOctave:: Char -> Maybe Octave
-transOctave x 
-	| x == '1' = Just One
-	| x == '2' = Just Two
-	| x == '3' = Just Three
-	| otherwise = Nothing
+toOctave :: Char -> Octave
+toOctave x = fromJust (lookup x (map swap tableOfoctave))
 
+-- show function for Pitch
+showPitch :: Pitch -> String
+showPitch (Pitch n o) =	((head.show) n):(fromOctave o):[] 
+
+-- change datatpye from String to Pitch
 toPitch :: String -> Maybe Pitch
 toPitch (x:y:[])
-	| isNote x == True && isOctave y == True = Just pitch
-  	| otherwise = toPitch []
-  	where pitch = Pitch (transNote x) (transOctave y)
+	| isJust (lookup x (map swap tableOfNote)) 
+		&& isJust (lookup y (map swap tableOfoctave)) = Just pitch
+ 	| otherwise = toPitch []
+  	where pitch = Pitch (read [x]::Note) (toOctave y)
 toPitch _ = Nothing
 
--}
+
+
