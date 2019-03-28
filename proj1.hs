@@ -1,11 +1,16 @@
 import Data.Maybe
 import Data.Tuple
+import Data.List
 
-data Note = A | B | C | D | E | F | G deriving (Eq,Show,Read)
-data Octave = One | Two | Three deriving (Eq,Read,Show)
-data Pitch = Pitch Note Octave deriving (Eq)
+data Note = A | B | C | D | E | F | G deriving (Eq,Ord,Show,Read)
+data Octave = One | Two | Three deriving (Eq,Ord,Read,Show)
+data Pitch = Pitch Note Octave deriving (Eq,Ord)
 
 instance Show Pitch where show = showPitch
+
+testPitch1 = [(Pitch A Two), (Pitch F One) , (Pitch D Three) ]
+testPitch2 = [(Pitch C One), (Pitch A One) , (Pitch B Three) ]
+testPitch3 = [(Pitch C Two), (Pitch C One) , (Pitch B Three) ]
 
 -- Define the tables for changing datatpye
 tableOfoctave = [(One,'1'),(Two,'2'),(Three,'3')]
@@ -30,6 +35,35 @@ toPitch (x:y:[])
  	| otherwise = toPitch []
   	where pitch = Pitch (read [x]::Note) (toOctave y)
 toPitch _ = Nothing
+
+--feedBack function: x:xs for target y:ys for guess
+--singlePitchMatch: first arg is target , the second is single guess
+singlePitchMatch :: [Pitch] -> Pitch -> Int
+singlePitchMatch [] _ = 0
+singlePitchMatch ((Pitch n1 o1):xs) (Pitch n2 o2)
+	| n1 == n2 && o1 == o2 = 1
+	| otherwise = singlePitchMatch xs (Pitch n2 o2)
+
+--pitchMatch: count matched Pitch for entire guess 
+pitchMatch :: [Pitch] -> [Pitch] -> Int
+pitchMatch _ [] = 0
+pitchMatch target (x:xs) = singlePitchMatch target x + pitchMatch target xs
+
+--noteMatch:
+noteMatch :: 
+
+{-
+feedBack :: [Pitch] -> [Pitch] -> (Int, Int, Int)
+feedBack x y = (pitchMatch x y,  )  
+-}
+
+
+
+
+
+
+
+
 
 
 
