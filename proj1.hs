@@ -53,10 +53,18 @@ pitchMatch target (x:xs) =
 	length (filter (x==) target) + pitchMatch target xs
 
 --filter [Pitch]
-filterPitch :: [Pitch] -> [Pitch] -> [Pitch]
-filterPitch _ [] =[]
-filterPitch target (x:xs) = 
-	filter (x==) target ++ filterPitch target xs
+sift :: [Pitch] -> Pitch -> [Pitch]
+sift [] _ = []
+sift (x:xs) y 
+	| x == y = xs
+	| otherwise = x:(sift xs y)  
+	
+filterGuess :: [Pitch] -> [Pitch] -> [Pitch]
+filterGuess _ [] =[]
+filterGuess target (x:xs)  
+	| elem x target == True = filterGuess (sift target x) xs
+	| otherwise = x:(filterGuess target xs)
+
 
 
 --noteMatch:
