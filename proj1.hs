@@ -52,18 +52,22 @@ pitchMatch _ [] = 0
 pitchMatch target (x:xs) =
 	length (filter (x==) target) + pitchMatch target xs
 
---filter [Pitch]
+--single filter
 sift :: [Pitch] -> Pitch -> [Pitch]
 sift [] _ = []
 sift (x:xs) y 
 	| x == y = xs
 	| otherwise = x:(sift xs y)  
-	
+
+--filter Target in order to count Note and Octave easily
+filterTarget :: [Pitch] -> [Pitch] -> [Pitch]
+filterTarget [] _ = []
+filterTarget target guess = foldl sift target guess
+
+--filter Guess to count Note and Octave easily
 filterGuess :: [Pitch] -> [Pitch] -> [Pitch]
-filterGuess _ [] =[]
-filterGuess target (x:xs)  
-	| elem x target == True = filterGuess (sift target x) xs
-	| otherwise = x:(filterGuess target xs)
+filterGuess _ [] = []
+filterGuess target guess = foldl sift guess target
 
 
 
