@@ -3,44 +3,14 @@ import Data.Maybe
 import Data.Tuple
 import Data.List
 
-------------------Definition----------------------------------------------
+------------------Definition of data-------------------------------------------
+
 data Note = A | B | C | D | E | F | G deriving (Eq,Ord,Show,Read)
 data Octave = One | Two | Three deriving (Eq,Ord,Read,Show)
 data Pitch = Pitch Note Octave deriving (Eq,Ord)
-data OctaveState = OctaveState Bool Int 
-data GameState = GameState { candidate :: [[Pitch]] }
+data GameState = GameState {candidate::[[Pitch]]}
+
 instance Show Pitch where show = showPitch
-
-testPitch1 = [(Pitch A Two), (Pitch F One) , (Pitch D Three) ]
-testPitch2 = [(Pitch C One), (Pitch A One) , (Pitch B Three) ]
-testPitch3 = [(Pitch C Two), (Pitch C One) , (Pitch B Three) ]
-testP0 = map fromJust (map toPitch ["D1","B1","G2"])
-testP1 = map fromJust (map toPitch ["A1","B1","C2"])
-testP2 = map fromJust (map toPitch ["A1","D1","E2"])
-testP3 = map fromJust (map toPitch ["A1","F1","G2"])
-testP4 = map fromJust (map toPitch ["B1","D1","G2"])
-
-testP00 = map fromJust (map toPitch ["A1","B2","A3"])
-testP000 = map fromJust (map toPitch ["A1","A2","B1"])
-
-
---define the tables for changing datatpye
-tableOfoctave = [(One,'1'),(Two,'2'),(Three,'3')]
-tableOfNote = [(A,'A'),(B,'B'),(C,'C'),(D,'D'),(E,'E'),(F,'F'),(G,'G')]
-
---define the list of candidate pitches
-genPitches :: [Note] -> [Octave] -> [Pitch]
-genPitches [] _ = []
-genPitches (x:xs) y = (map ((\ a b -> (Pitch a b)) x) y) ++ genPitches xs y
-
-listOfPitch = genPitches [A,B,C,D,E,F,G] [One, Two, Three]
-
-combinations :: Int -> [a] -> [[a]]
-combinations 0 _ = [[]]
-combinations n xs = [ xs !! i : x | i <- [0..(length xs)-1],
-						 x <- combinations (n-1) (drop (i+1) xs) ]
-
-listOfTarget = combinations 3 listOfPitch
 
 --get Note&Octave from Pitch
 getNote :: Pitch -> Note
@@ -49,19 +19,35 @@ getNote (Pitch n _ ) = n
 getOctave :: Pitch -> Octave
 getOctave (Pitch _ o ) = o
 
-{-
---get candidate from gameState
- getCandidate :: GameState -> Candidate
- getCandidate (GameState x) = x 
--}
+------------------Definition of candidate Target-------------------------------
 
-------------------Display-------------------------------------------------
---functions for changing datatype from Octave <-> Char
+--generate the list of candidate pitches
+genPitches :: [Note] -> [Octave] -> [Pitch]
+genPitches [] _ = []
+genPitches (x:xs) y = (map ((\ a b -> (Pitch a b)) x) y) ++ genPitches xs y
+
+listOfPitch = genPitches [A,B,C,D,E,F,G] [One, Two, Three]
+
+--generate combinations for Pitches 
+combinations :: Int -> [a] -> [[a]]
+combinations 0 _ = [[]]
+combinations n xs = [ xs !! i : x | i <- [0..(length xs)-1],
+						 x <- combinations (n-1) (drop (i+1) xs) ]
+
+listOfTarget = combinations 3 listOfPitch
+
+------------------Display------------------------------------------------------
+
+--define the tables for changing datatpye
+tableOfOctave = [(One,'1'),(Two,'2'),(Three,'3')]
+tableOfNote = [(A,'A'),(B,'B'),(C,'C'),(D,'D'),(E,'E'),(F,'F'),(G,'G')]
+
+--functions for changing datatype from Octave to Char, vice versa
 fromOctave :: Octave -> Char
-fromOctave x = fromJust (lookup x tableOfoctave)
+fromOctave x = fromJust (lookup x tableOfOctave)
 
 toOctave :: Char -> Octave
-toOctave x = fromJust (lookup x (map swap tableOfoctave))
+toOctave x = fromJust (lookup x (map swap tableOfOctave))
 
 --show function for Pitch
 showPitch :: Pitch -> String
@@ -71,11 +57,13 @@ showPitch (Pitch n o) =	((head.show) n):(fromOctave o):[]
 toPitch :: String -> Maybe Pitch
 toPitch (x:y:[])
 	| isJust (lookup x (map swap tableOfNote)) 
-		&& isJust (lookup y (map swap tableOfoctave)) = Just pitch
+		&& isJust (lookup y (map swap tableOfOctave)) = Just pitch
  	| otherwise = toPitch []
   	where pitch = Pitch (read [x]::Note) (toOctave y)
 toPitch _ = Nothing
-------------------Feedback------------------------------------------------
+
+------------------Feedback-----------------------------------------------------
+
 --single filter
 sift :: [Pitch] -> Pitch -> [Pitch]
 sift [] _ = []
@@ -133,9 +121,9 @@ octaveMatch target guess = twoPointersCountOctave ft fg
 		fg = sortBy (\(Pitch _ o1) (Pitch _ o2) 
 				-> compare o1 o2) (filterGuess target guess)
 
---feedBack function
-feedBack :: [Pitch] -> [Pitch] -> (Int, Int, Int)
-feedBack target guess = 
+--feedback function
+feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
+feedback target guess = 
 	(pitchMatch target guess, noteMatch target guess,
 		octaveMatch target guess)  
 ------------------initial-------------------------------------------------
@@ -143,39 +131,11 @@ feedBack target guess =
 initialGuess :: ([Pitch],GameState)
 initialGuess = (map fromJust (map toPitch ["A1","B2","C3"]) , 
 				(GameState {candidate=listOfTarget}) )
-{-
-octaveGuess :: ([Pitch],OctaveState) -> (Int, Int, Int) 
-					-> (Octave, Octave, Octave, OctaveState)
-octaveGuess (p1:p2:p3:_, OctaveState b kth) (pNum, _, oNum) =
-	if b == True then (getOctave p1, getOctave p2, getOctave p3,
-						 (OctaveState True (kth+1) ))
-		else case num of 
-			3 -> (getOctave p1, getOctave p2, getOctave p3,
-						 (OctaveState True (kth+1) ))
-			2 -> case kth of 
-				1 -> (One, Two, Two, (OctaveState False (kth+1)))
-				2 -> (One, One, Two, (OctaveState False (kth+1)))
-				3 -> (One, Three, Three, (OctaveState False (kth+1)))
-			1 -> case kth of 
-				1 -> (One, One, One, (OctaveState False (kth+1)))
-				2 -> (Two, Three, Three, (OctaveState False (kth+1)))
-				3 -> case (getOctave p1, getOctave p2, getOctave p3) of 
-					(Two, Three, Three) -> (One, One, Three,
-											 (OctaveState False (kth+1)))
-					(One, One, Two) -> (Two, Two, Three,
-										 (OctaveState False (kth+1)))
-			0 -> case kth of
-				2 -> (Two, Two, Two, (OctaveState False (kth+1)))
-				3 -> (Three, Three, Three, (OctaveState False (kth+1)))
-
-			otherwise -> error "error octaveGuess"
-	where num = pNum+oNum
--}
 
 pare :: [[Pitch]] -> [Pitch] -> (Int, Int, Int) -> [[Pitch]]
-pare list x y = filter (\a -> feedBack x a == y) list
+pare list x y = filter (\a -> feedback x a == y) list
  
--- pare list x y = filter (== y) (map feedBack x list)
+
 
 find_Count :: [((Int,Int,Int), Int)] -> (Int, Int, Int) -> [((Int,Int,Int), Int)]
 find_Count [] x = [(x,1)]
@@ -185,7 +145,7 @@ find_Count ((x, num):xs) y
 
 singleCount :: [[Pitch]] -> [Pitch] -> [((Int,Int,Int), Int)] -> [((Int,Int,Int), Int)]
 singleCount [] _ table = table
-singleCount (x:xs) y table = let k = (feedBack x y) in
+singleCount (x:xs) y table = let k = (feedback x y) in
 	singleCount xs y (find_Count table k)
 
 expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
@@ -202,45 +162,10 @@ pickOne (x:xs) list min curBest
 	| otherwise = pickOne xs list min curBest
 	where k = expectedRemainNum list x
 
-
-
-
-
-
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 nextGuess (pitches, gs) y =
 	 (pickOne list list 1330 [] , GameState {candidate=list})
 	where list = pare (candidate gs) pitches y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
