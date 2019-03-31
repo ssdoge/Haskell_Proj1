@@ -1,4 +1,4 @@
---module Proj1 (Pitch, toPitch, feedback, GameState, initialGuess, nextGuess) where
+module Proj1 (Pitch, toPitch, feedback, GameState, initialGuess, nextGuess) where
 import Data.Maybe
 import Data.Tuple
 import Data.List
@@ -176,16 +176,6 @@ pare :: [[Pitch]] -> [Pitch] -> (Int, Int, Int) -> [[Pitch]]
 pare list x y = filter (\a -> feedBack x a == y) list
  
 -- pare list x y = filter (== y) (map feedBack x list)
-{-
-foo :: [Pitch] -> Pitch -> [(Int, Int, Int)]
-foo [] _ = []
-foo (x:xs) y = (feedBack x y): foo xs y 
-
-bar :: [Pitch] -> [[(Int, Int, Int)]] 
-bar x = map (foo x) x 
--}
---funx :: [[(Int, Int, Int)]] -> Int
-
 
 find_Count :: [((Int,Int,Int), Int)] -> (Int, Int, Int) -> [((Int,Int,Int), Int)]
 find_Count [] x = [(x,1)]
@@ -193,30 +183,34 @@ find_Count ((x, num):xs) y
 	| x == y = (x, num+1):xs 
 	| otherwise = (x,num):find_Count xs y
 
-singleCount :: [Pitch] -> [Pitch] -> [((Int,Int,Int), Int)] -> [((Int,Int,Int), Int)]
-singleCount x y table = let k = (feedBack x y) in
-	find_Count table k
+singleCount :: [[Pitch]] -> [Pitch] -> [((Int,Int,Int), Int)] -> [((Int,Int,Int), Int)]
+singleCount [] _ table = table
+singleCount (x:xs) y table = let k = (feedBack x y) in
+	singleCount xs y (find_Count table k)
 
-expectedRemainNum :: [[Pitch]] -> [Pitch] -> Int
+expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
 expectedRemainNum list x =
-	sum map (\(_, n) -> n*n/len) k
+	sum (map (\(_, n) -> fromIntegral (n*n) / fromIntegral len) k)
 	where 
-		k = foldl (singleCount x []) list  
+		k = singleCount list x []  
 		len = length k
 
+pickOne :: [[Pitch]] -> [[Pitch]] -> Float -> [Pitch] -> [Pitch]
+pickOne [] _ min best = best
+pickOne (x:xs) list min curBest 
+	| k < min = pickOne xs list k x
+	| otherwise = pickOne xs list min curBest
+	where k = expectedRemainNum list x
 
-{-
-pickOne :: [Pitch] -> [Pitch, Pitch, Pitch]
-pickOne list = 
 
 
-nextGuess :: ([Pitch],GameState) → (Int,Int,Int) → ([Pitch],GameState)
+
+
+
+nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 nextGuess (pitches, gs) y =
-	 (pickOne list, GameState {candidate=list})
+	 (pickOne list list 1330 [] , GameState {candidate=list})
 	where list = pare (candidate gs) pitches y
-
-
--}
 
 
 
