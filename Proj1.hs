@@ -54,11 +54,12 @@ showPitch :: Pitch -> String
 showPitch (Pitch n o) =	((head.show) n):(fromOctave o):[] 
 
 --change datatpye from String to Pitch
+--arguement x represents for Note, y represents for Octave
 toPitch :: String -> Maybe Pitch
 toPitch (x:y:[])
 	| isJust (lookup x (map swap tableOfNote)) 
 		&& isJust (lookup y (map swap tableOfOctave)) = Just pitch
- 	| otherwise = toPitch []
+ 	| otherwise = toPitch "Nothing"
   	where pitch = Pitch (read [x]::Note) (toOctave y)
 toPitch _ = Nothing
 
@@ -72,18 +73,21 @@ sift (x:xs) y
 	| otherwise = x:(sift xs y)  
 
 --filter Target in order to count Note and Octave easily
+--function returns unmatched Pitches in Target
 filterTarget :: [Pitch] -> [Pitch] -> [Pitch]
 filterTarget [] _ = []
 filterTarget target guess = foldl sift target guess
 
 --filter Guess to count Note and Octave easily
+--function returns unmatched Pitches in Guess
 filterGuess :: [Pitch] -> [Pitch] -> [Pitch]
 filterGuess _ [] = []
 filterGuess target guess = foldl sift guess target
 
 --pitchMatch: count matched Pitch for entire guess 
 pitchMatch :: [Pitch] -> [Pitch] -> Int
-pitchMatch target guess = 3 - length (filterGuess target guess)
+pitchMatch target guess = maxMatchNum - length (filterGuess target guess)
+	where maxMatchNum = 3
 
 --two-Pointers method for counting 
 twoPointersCountNote :: [Pitch] -> [Pitch] -> Int
@@ -101,15 +105,16 @@ twoPointersCountOctave ((Pitch n1 o1):xs) ((Pitch n2 o2):ys)
 	| o1 == o2 = 1 + twoPointersCountOctave xs ys
 	| o1 < o2 = twoPointersCountOctave xs ((Pitch n2 o2):ys)
 	| otherwise = twoPointersCountOctave ((Pitch n1 o1):xs) ys
+
 --noteMatch: using above method on list sorted by note order
 noteMatch :: [Pitch] -> [Pitch] -> Int
 noteMatch _ [] = 0
 noteMatch target guess = twoPointersCountNote ft fg
 	where 
 		ft = sortBy (\(Pitch n1 _) (Pitch n2 _) 
-				-> compare n1 n2) (filterTarget target guess)
+							-> compare n1 n2) (filterTarget target guess)
 		fg = sortBy (\(Pitch n1 _) (Pitch n2 _) 
-				-> compare n1 n2) (filterGuess target guess)
+							-> compare n1 n2) (filterGuess target guess)
 
 --octaveMatch: using above method on list sorted by octave
 octaveMatch :: [Pitch] -> [Pitch] -> Int
@@ -117,44 +122,67 @@ octaveMatch _ [] = 0
 octaveMatch target guess = twoPointersCountOctave ft fg
 	where 
 		ft = sortBy (\(Pitch _ o1) (Pitch _ o2) 
-				-> compare o1 o2) (filterTarget target guess)
+							-> compare o1 o2) (filterTarget target guess)
 		fg = sortBy (\(Pitch _ o1) (Pitch _ o2) 
-				-> compare o1 o2) (filterGuess target guess)
+							-> compare o1 o2) (filterGuess target guess)
 
 --feedback function
 feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
 feedback target guess = 
-	(pitchMatch target guess, noteMatch target guess,
-		octaveMatch target guess)  
-------------------initial-------------------------------------------------
+	(pitchMatch target guess, noteMatch target guess, octaveMatch target guess)  
 
-initialGuess :: ([Pitch],GameState)
-initialGuess = (map fromJust (map toPitch ["A1","B2","C3"]) , 
-				(GameState {candidate=listOfTarget}) )
+------------------Initial Guess------------------------------------------------
+--the intuition behind ["A1","B2","C3"] is quite easy. For Note, there are 
+--seven cases which are all the same for us since we haven't got any infomation,
+--and we make three different guesses in order to get more infomation from 
+--feedback. Same for Octave.
 
+initialGuess :: ([Pitch], GameState)
+initialGuess = (map fromJust (map toPitch ["A1","B2","C3"]), 
+					(GameState {candidate=listOfTarget}) )
+
+------------------Next Guess---------------------------------------------------
+--basic idea lies in hints. keep a candidate list, a.k.a GameState, and pare 
+--the impossible chords down based on feedback from last guess. Then compute
+--each chord in candidate list for possible remaining candidate numbers. Choose 
+--the smallest one as next guess 
+
+--pare down the impossible candidate 
+--1st arg is candidate list, 2rd arg is last guess, 3rd arg is feedback
 pare :: [[Pitch]] -> [Pitch] -> (Int, Int, Int) -> [[Pitch]]
 pare list x y = filter (\a -> feedback x a == y) list
  
-
-
-find_Count :: [((Int,Int,Int), Int)] -> (Int, Int, Int) -> [((Int,Int,Int), Int)]
-find_Count [] x = [(x,1)]
+--a "loop" for finding then counting a certain feedback for a guess/chord
+--1st arg is a list recording a certain feedback and corresponding repeated 
+--number. 2rd arg is a feedback we want to join into the list 
+find_Count :: [((Int,Int,Int), Int)]->(Int, Int, Int)->[((Int,Int,Int), Int)]
+find_Count [] x = [(x, 1)]
 find_Count ((x, num):xs) y
 	| x == y = (x, num+1):xs 
-	| otherwise = (x,num):find_Count xs y
+	| otherwise = (x, num):find_Count xs y
 
-singleCount :: [[Pitch]] -> [Pitch] -> [((Int,Int,Int), Int)] -> [((Int,Int,Int), Int)]
-singleCount [] _ table = table
-singleCount (x:xs) y table = let k = (feedback x y) in
-	singleCount xs y (find_Count table k)
+--for a chord in candidate list, count all different possible feedbacks and 
+--corresponding number of occurrences. 
+--1st arg is candidate list, 2rd arg is the chord, 3rd arg is previous 
+--statistics. notice that it is a "loop"
+chordCount :: [[Pitch]] -> [Pitch] -> [((Int,Int,Int), Int)] 
+												-> [((Int,Int,Int), Int)]
+chordCount [] _ table = table
+chordCount (x:xs) y table = let k = (feedback x y) in
+	chordCount xs y (find_Count table k)
 
+--combine above two functions to give an evaluation for a certain chord
 expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
 expectedRemainNum list x =
 	sum (map (\(_, n) -> fromIntegral (n*n) / fromIntegral len) k)
 	where 
-		k = singleCount list x []  
+		k = chordCount list x []  
 		len = length k
 
+--pick a chord which is most likely to leave a smallest remaining candidate list
+--1st arg is for iteration or "loop". 2rd arg is the whole candidate list which
+--keeps unchanged in iteration. 3rd arg is current minimum and 4th arg is 
+--corresponding chord which is current best guess.
 pickOne :: [[Pitch]] -> [[Pitch]] -> Float -> [Pitch] -> [Pitch]
 pickOne [] _ min best = best
 pickOne (x:xs) list min curBest 
@@ -162,11 +190,13 @@ pickOne (x:xs) list min curBest
 	| otherwise = pickOne xs list min curBest
 	where k = expectedRemainNum list x
 
+--an integration for above all 
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 nextGuess (pitches, gs) y =
-	 (pickOne list list 1330 [] , GameState {candidate=list})
-	where list = pare (candidate gs) pitches y
-
-
+	 (pickOne list list init_min emptyList , GameState {candidate=list})
+	where 
+		list = pare (candidate gs) pitches y
+		init_min = 1330
+		emptyList = []
 
 
