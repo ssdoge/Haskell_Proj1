@@ -6,27 +6,24 @@ import Data.List
 ------------------Definition of data-------------------------------------------
 
 data Note = A | B | C | D | E | F | G deriving (Eq,Ord,Show,Read)
-data Octave = One | Two | Three deriving (Eq,Ord,Read,Show)
+data Octave = One | Two | Three deriving (Eq,Ord)
 data Pitch = Pitch Note Octave deriving (Eq,Ord)
 data GameState = GameState {candidate::[[Pitch]]}
 
 instance Show Pitch where show = showPitch
-
+{-}
 --get Note&Octave from Pitch
 getNote :: Pitch -> Note
 getNote (Pitch n _ ) = n 
 
 getOctave :: Pitch -> Octave
 getOctave (Pitch _ o ) = o
+-}
 
 ------------------Definition of candidate Target-------------------------------
 
---generate the list of candidate pitches
-genPitches :: [Note] -> [Octave] -> [Pitch]
-genPitches [] _ = []
-genPitches (x:xs) y = (map ((\ a b -> (Pitch a b)) x) y) ++ genPitches xs y
-
-listOfPitch = genPitches [A,B,C,D,E,F,G] [One, Two, Three]
+--the list of candidate pitches
+listOfPitch = [(Pitch x y) | x <- [A,B,C,D,E,F,G], y <- [One, Two, Three]]
 
 --generate combinations for Pitches 
 combinations :: Int -> [a] -> [[a]]
@@ -38,29 +35,37 @@ listOfTarget = combinations 3 listOfPitch
 
 ------------------Display------------------------------------------------------
 
---define the tables for changing datatpye
-tableOfOctave = [(One,'1'),(Two,'2'),(Three,'3')]
-tableOfNote = [(A,'A'),(B,'B'),(C,'C'),(D,'D'),(E,'E'),(F,'F'),(G,'G')]
+--define the table for changing datatpye
+tableOfOctave = [('1', One), ('2', Two), ('3', Three)]
+--tableOfNote = [(A,'A'),(B,'B'),(C,'C'),(D,'D'),(E,'E'),(F,'F'),(G,'G')]
 
+
+{-
 --functions for changing datatype from Octave to Char, vice versa
 fromOctave :: Octave -> Char
 fromOctave x = fromJust (lookup x tableOfOctave)
+--fromOctave x = fromJust (lookup x tableOfOctave)
 
 toOctave :: Char -> Octave
-toOctave x = fromJust (lookup x (map swap tableOfOctave))
+toOctave x = fromJust (lookup x (map tableOfOctave))
 
---show function for Pitch
+-}
+
+--show function for Pitch, use pairs for changing data
 showPitch :: Pitch -> String
-showPitch (Pitch n o) =	((head.show) n):(fromOctave o):[] 
+showPitch (Pitch n o) =	show n ++[fromJust $ lookup o $ map swap tableOfOctave]
 
 --change datatpye from String to Pitch
 --arguement x represents for Note, y represents for Octave
 toPitch :: String -> Maybe Pitch
 toPitch (x:y:[])
-	| isJust (lookup x (map swap tableOfNote)) 
-		&& isJust (lookup y (map swap tableOfOctave)) = Just pitch
+	| elem x tableOfNote && elem y octaveList
+		= Just pitch
  	| otherwise = toPitch "Nothing"
-  	where pitch = Pitch (read [x]::Note) (toOctave y)
+  	where
+  	 pitch = Pitch (read [x]::Note) (fromJust $ lookup y tableOfOctave)
+  	 tableOfNote = "ABCDEF"
+  	 octaveList = ['1','2','3']
 toPitch _ = Nothing
 
 ------------------Feedback-----------------------------------------------------
