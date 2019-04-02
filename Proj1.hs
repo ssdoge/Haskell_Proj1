@@ -57,7 +57,7 @@ pitchCount (x:xs) y
 	| elem x y == True = 1 + pitchCount xs y
 	| otherwise = pitchCount xs y
 
---for a sorted [Pitch] using two pointers method 
+--for a sorted [Pitch] using two-pointers method 
 noteCount :: [Pitch] -> [Pitch] -> Int
 noteCount [] _ = 0
 noteCount _ [] = 0
@@ -66,29 +66,29 @@ noteCount ((Pitch n1 o1):xs) ((Pitch n2 o2):ys)
 	| n1 < n2 = noteCount xs ((Pitch n2 o2):ys) 
 	| otherwise = noteCount ((Pitch n1 o1):xs) ys 
 
---
-countOctave :: [Pitch] -> [Int] -> [Int]
-countOctave [] x = x
-countOctave ((Pitch _ o):xs) [a, b, c]
-	| o == One = countOctave xs [a+1, b, c]
-	| o == Two = countOctave xs [a, b+1, c]
-	| o == Three = countOctave xs [a, b, c+1]
+--a counting for octave
+counting :: [Pitch] -> [Int] -> [Int]
+counting [] x = x
+counting ((Pitch _ o):xs) [a, b, c]
+	| o == One = counting xs [a+1, b, c]
+	| o == Two = counting xs [a, b+1, c]
+	| o == Three = counting xs [a, b, c+1]
 
-matchedOctave :: [Pitch] -> [Pitch] -> Int
-matchedOctave x y = sum $ map (\(m, n) -> if m<n then m else n) $ zip a b
+octaveCount :: [Pitch] -> [Pitch] -> Int
+octaveCount x y = sum $ map (\(m, n) -> if m<n then m else n) $ zip a b
 	where 
-		a = countOctave x [0,0,0]
-		b = countOctave y [0,0,0]
+		a = counting x [0,0,0]
+		b = counting y [0,0,0]
 
 --feedback function
 feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
 feedback target guess = (a, b-a, c-a)
 	where 
-		a = pitchCount target guess
+		a = pitchCount target $ fromList guess
 		b = noteCount t g
 		t = sort target
 		g = sort guess
-		c = matchedOctave target guess
+		c = octaveCount target guess
 
 ------------------Initial Guess------------------------------------------------
 --the intuition behind ["A1","B2","C3"] is quite easy. For Note, there are 
@@ -109,7 +109,7 @@ initialGuess = (map fromJust (map toPitch ["A1","B2","C3"]),
 --pare down the impossible candidate 
 --1st arg is candidate list, 2rd arg is last guess, 3rd arg is feedback
 pare :: [[Pitch]] -> [Pitch] -> (Int, Int, Int) -> [[Pitch]]
-pare list x y = filter (\a -> feedback x a == y) list
+pare candidate x fb = filter (\a -> feedback x a == fb) candidate
  
 --a "loop" for finding then counting a certain feedback for a guess/chord
 --1st arg is a list recording a certain feedback and corresponding repeated 
