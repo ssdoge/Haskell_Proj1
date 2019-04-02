@@ -84,7 +84,7 @@ octaveCount x y = sum $ map (\(m, n) -> if m<n then m else n) $ zip a b
 feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
 feedback target guess = (a, b-a, c-a)
 	where 
-		a = pitchCount target $ fromList guess
+		a = pitchCount target guess
 		b = noteCount t g
 		t = sort target
 		g = sort guess
