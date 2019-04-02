@@ -11,14 +11,6 @@ data Pitch = Pitch Note Octave deriving (Eq,Ord)
 data GameState = GameState {candidate::[[Pitch]]}
 
 instance Show Pitch where show = showPitch
-{-}
---get Note&Octave from Pitch
-getNote :: Pitch -> Note
-getNote (Pitch n _ ) = n 
-
-getOctave :: Pitch -> Octave
-getOctave (Pitch _ o ) = o
--}
 
 ------------------Definition of candidate Target-------------------------------
 
@@ -37,19 +29,6 @@ listOfTarget = combinations 3 listOfPitch
 
 --define the table for changing datatpye
 tableOfOctave = [('1', One), ('2', Two), ('3', Three)]
---tableOfNote = [(A,'A'),(B,'B'),(C,'C'),(D,'D'),(E,'E'),(F,'F'),(G,'G')]
-
-
-{-
---functions for changing datatype from Octave to Char, vice versa
-fromOctave :: Octave -> Char
-fromOctave x = fromJust (lookup x tableOfOctave)
---fromOctave x = fromJust (lookup x tableOfOctave)
-
-toOctave :: Char -> Octave
-toOctave x = fromJust (lookup x (map tableOfOctave))
-
--}
 
 --show function for Pitch, use pairs for changing data
 showPitch :: Pitch -> String
@@ -64,77 +43,52 @@ toPitch (x:y:[])
  	| otherwise = toPitch "Nothing"
   	where
   	 pitch = Pitch (read [x]::Note) (fromJust $ lookup y tableOfOctave)
-  	 tableOfNote = "ABCDEF"
+  	 tableOfNote = "ABCDEFG"
   	 octaveList = ['1','2','3']
 toPitch _ = Nothing
 
 ------------------Feedback-----------------------------------------------------
 
---single filter
-sift :: [Pitch] -> Pitch -> [Pitch]
-sift [] _ = []
-sift (x:xs) y 
-	| x == y = xs
-	| otherwise = x:(sift xs y)  
+--count pitch using "elem", first arg is what we want to find, the second arg
+--is a lookup table
+pitchCount :: [Pitch] -> [Pitch] -> Int
+pitchCount [] _ = 0 
+pitchCount (x:xs) y 
+	| elem x y == True = 1 + pitchCount xs y
+	| otherwise = pitchCount xs y
 
---filter Target in order to count Note and Octave easily
---function returns unmatched Pitches in Target
-filterTarget :: [Pitch] -> [Pitch] -> [Pitch]
-filterTarget [] _ = []
-filterTarget target guess = foldl sift target guess
+--for a sorted [Pitch] using two pointers method 
+noteCount :: [Pitch] -> [Pitch] -> Int
+noteCount [] _ = 0
+noteCount _ [] = 0
+noteCount ((Pitch n1 o1):xs) ((Pitch n2 o2):ys) 
+	| n1 == n2 = 1 + noteCount xs ys
+	| n1 < n2 = noteCount xs ((Pitch n2 o2):ys) 
+	| otherwise = noteCount ((Pitch n1 o1):xs) ys 
 
---filter Guess to count Note and Octave easily
---function returns unmatched Pitches in Guess
-filterGuess :: [Pitch] -> [Pitch] -> [Pitch]
-filterGuess _ [] = []
-filterGuess target guess = foldl sift guess target
+--
+countOctave :: [Pitch] -> [Int] -> [Int]
+countOctave [] x = x
+countOctave ((Pitch _ o):xs) [a, b, c]
+	| o == One = countOctave xs [a+1, b, c]
+	| o == Two = countOctave xs [a, b+1, c]
+	| o == Three = countOctave xs [a, b, c+1]
 
---pitchMatch: count matched Pitch for entire guess 
-pitchMatch :: [Pitch] -> [Pitch] -> Int
-pitchMatch target guess = maxMatchNum - length (filterGuess target guess)
-	where maxMatchNum = 3
-
---two-Pointers method for counting 
-twoPointersCountNote :: [Pitch] -> [Pitch] -> Int
-twoPointersCountNote [] _ = 0
-twoPointersCountNote _ [] = 0
-twoPointersCountNote ((Pitch n1 o1):xs) ((Pitch n2 o2):ys) 
-	| n1 == n2 = 1 + twoPointersCountNote xs ys
-	| n1 < n2 = twoPointersCountNote xs ((Pitch n2 o2):ys)
-	| otherwise = twoPointersCountNote ((Pitch n1 o1):xs) ys
-
-twoPointersCountOctave :: [Pitch] -> [Pitch] -> Int
-twoPointersCountOctave [] _ = 0
-twoPointersCountOctave _ [] = 0
-twoPointersCountOctave ((Pitch n1 o1):xs) ((Pitch n2 o2):ys) 
-	| o1 == o2 = 1 + twoPointersCountOctave xs ys
-	| o1 < o2 = twoPointersCountOctave xs ((Pitch n2 o2):ys)
-	| otherwise = twoPointersCountOctave ((Pitch n1 o1):xs) ys
-
---noteMatch: using above method on list sorted by note order
-noteMatch :: [Pitch] -> [Pitch] -> Int
-noteMatch _ [] = 0
-noteMatch target guess = twoPointersCountNote ft fg
+matchedOctave :: [Pitch] -> [Pitch] -> Int
+matchedOctave x y = sum $ map (\(m, n) -> if m<n then m else n) $ zip a b
 	where 
-		ft = sortBy (\(Pitch n1 _) (Pitch n2 _) 
-							-> compare n1 n2) (filterTarget target guess)
-		fg = sortBy (\(Pitch n1 _) (Pitch n2 _) 
-							-> compare n1 n2) (filterGuess target guess)
-
---octaveMatch: using above method on list sorted by octave
-octaveMatch :: [Pitch] -> [Pitch] -> Int
-octaveMatch _ [] = 0
-octaveMatch target guess = twoPointersCountOctave ft fg
-	where 
-		ft = sortBy (\(Pitch _ o1) (Pitch _ o2) 
-							-> compare o1 o2) (filterTarget target guess)
-		fg = sortBy (\(Pitch _ o1) (Pitch _ o2) 
-							-> compare o1 o2) (filterGuess target guess)
+		a = countOctave x [0,0,0]
+		b = countOctave y [0,0,0]
 
 --feedback function
 feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
-feedback target guess = 
-	(pitchMatch target guess, noteMatch target guess, octaveMatch target guess)  
+feedback target guess = (a, b-a, c-a)
+	where 
+		a = pitchCount target guess
+		b = noteCount t g
+		t = sort target
+		g = sort guess
+		c = matchedOctave target guess
 
 ------------------Initial Guess------------------------------------------------
 --the intuition behind ["A1","B2","C3"] is quite easy. For Note, there are 
