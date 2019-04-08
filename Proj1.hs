@@ -1,7 +1,10 @@
 module Proj1 (Pitch, toPitch, feedback, GameState, initialGuess, nextGuess) where
 import Data.Maybe
-import Data.Tuple
-import Data.List
+import Data.Tuple 
+import Data.List 
+import Data.Set (member, fromList, Set)
+import Data.Map (insertWith, toList, empty, Map)
+
 
 ------------------Definition of data-------------------------------------------
 
@@ -52,11 +55,20 @@ toPitch _ = Nothing
 
 --count pitch using "elem", first arg is what we want to find, the second arg
 --is a lookup table
+{-
 pitchCount :: [Pitch] -> [Pitch] -> Int
 pitchCount [] _ = 0 
 pitchCount (x:xs) y 
 	| elem x y == True = 1 + pitchCount xs y
 	| otherwise = pitchCount xs y
+
+-}
+pitchCount :: [Pitch] -> Set Pitch -> Int
+pitchCount [] _ = 0 
+pitchCount (x:xs) y 
+	| member x y == True = 1 + pitchCount xs y
+	| otherwise = pitchCount xs y
+
 
 --for a sorted [Pitch](sort by Note)using two-pointers method 
 noteCount :: [Pitch] -> [Pitch] -> Int
@@ -85,11 +97,12 @@ octaveCount x y = sum $ map (\(m, n) -> if m<n then m else n) $ zip a b
 feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
 feedback target guess = (a, b-a, c-a)
 	where 
-		a = pitchCount target guess
+		a = pitchCount guess set
 		b = noteCount t g
 		t = sort target
 		g = sort guess
 		c = octaveCount target guess
+		set = fromList target
 
 ------------------Initial Guess------------------------------------------------
 --the intuition behind ["A1","B2","C3"] is quite easy. For Note, there are 
@@ -115,28 +128,26 @@ pare candidate x fb = filter (\a -> feedback x a == fb) candidate
 --a "loop" for finding then counting a certain feedback for a guess/chord
 --1st arg is a list recording a certain feedback and corresponding repeated 
 --number. 2rd arg is a feedback we want to join into the list 
-find_Count :: [((Int,Int,Int), Int)]->(Int, Int, Int)->[((Int,Int,Int), Int)]
-find_Count [] x = [(x, 1)]
-find_Count ((x, num):xs) y
-	| x == y = (x, num+1):xs 
-	| otherwise = (x, num):find_Count xs y
+find_Count :: Map (Int, Int, Int) Int -> (Int, Int, Int) -> Map (Int, Int, Int) Int	
+find_Count map k = insertWith (\a b -> b+1) k 1 map
+
 
 --for a chord in candidate list, count all different possible feedbacks and 
 --corresponding number of occurrences. 
 --1st arg is candidate list, 2rd arg is the chord, 3rd arg is previous 
 --statistics. notice that it is a "loop"
-chordCount :: [[Pitch]] -> [Pitch] -> [((Int,Int,Int), Int)] 
-												-> [((Int,Int,Int), Int)]
-chordCount [] _ table = table
-chordCount (x:xs) y table = let k = (feedback x y) in
-	chordCount xs y (find_Count table k)
+chordCount :: [[Pitch]] -> [Pitch] -> Map (Int, Int, Int) Int  
+												-> Map (Int, Int, Int) Int
+chordCount [] _ map = map
+chordCount (x:xs) y map = let k = (feedback x y) in
+	chordCount xs y (find_Count map k)
 
 --combine above two functions to give an evaluation for a certain chord
 expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
 expectedRemainNum list x =
 	sum (map (\(_, n) -> fromIntegral (n*n) / fromIntegral len) k)
 	where 
-		k = chordCount list x []  
+		k = toList (chordCount list x empty)
 		len = length k
 
 --pick a chord which is most likely to leave a smallest remaining candidate list
