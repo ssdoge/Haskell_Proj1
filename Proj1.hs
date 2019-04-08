@@ -3,7 +3,7 @@ import Data.Maybe
 import Data.Tuple 
 import Data.List 
 import Data.Set (member, fromList, Set)
-import Data.Map (insertWith, toList, empty, elems, Map)
+import Data.Map (insertWith, toList, empty, elems, lookup Map)
 
 
 ------------------Definition of data-------------------------------------------
@@ -137,8 +137,11 @@ pare candidate x fb = filter (\a -> feedback x a == fb) candidate
 chordCount :: [[Pitch]] -> [Pitch] -> Map (Int, Int, Int) Int  
 												-> Map (Int, Int, Int) Int
 chordCount [] _ map = map
-chordCount (x:xs) y map = let k = (feedback x y) in
+chordCount (x:xs) y map = let k = (Data.Map.lookup (x,y) fbMap) in
 	chordCount xs y (insertWith (\a b -> b+1) k 1 map)
+
+feedbackMap :: [Pitch] -> [Pitch] -> Map ([Pitch],[Pitch]) (Int, Int, Int) -> (Int, Int, Int)
+feedbackMap 
 
 --combine above two functions to give an evaluation for a certain chord
 expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
@@ -162,10 +165,11 @@ pickOne (x:xs) list min curBest
 --an integration for above all 
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 nextGuess (pitches, gs) y =
-	 (pickOne list list init_min curBest , GameState {candidate=list})
+	 (pickOne list list init_min curBest , GameState {candidate=list,fbMap=fbm})
 	where 
 		list = pare (candidate gs) pitches y
 		init_min = 1330
+		fbm = 
 		curBest = []
 
 
