@@ -4,7 +4,11 @@ import Data.Tuple
 import Data.List 
 import Data.Set (member, fromList, Set)
 <<<<<<< HEAD
+<<<<<<< HEAD
 import Data.Map (insertWith, toList, empty, elems, lookup Map)
+=======
+import Data.Map (insertWith, toList, empty, Map)
+>>>>>>> parent of b1281b6... Update Proj1.hs
 =======
 import Data.Map (insertWith, toList, empty, Map)
 >>>>>>> parent of b1281b6... Update Proj1.hs
@@ -144,6 +148,7 @@ chordCount :: [[Pitch]] -> [Pitch] -> Map (Int, Int, Int) Int
 												-> Map (Int, Int, Int) Int
 chordCount [] _ map = map
 <<<<<<< HEAD
+<<<<<<< HEAD
 chordCount (x:xs) y map = let k = (Data.Map.lookup (x,y) fbMap) in
 	chordCount xs y (insertWith (\a b -> b+1) k 1 map)
 =======
@@ -153,6 +158,10 @@ chordCount (x:xs) y map = let k = (feedback x y) in
 
 feedbackMap :: [Pitch] -> [Pitch] -> Map ([Pitch],[Pitch]) (Int, Int, Int) -> (Int, Int, Int)
 feedbackMap 
+=======
+chordCount (x:xs) y map = let k = (feedback x y) in
+	chordCount xs y (find_Count map k)
+>>>>>>> parent of b1281b6... Update Proj1.hs
 
 --combine above two functions to give an evaluation for a certain chord
 expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
@@ -177,12 +186,20 @@ pickOne (x:xs) list min curBest
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 nextGuess (pitches, gs) y =
 <<<<<<< HEAD
+<<<<<<< HEAD
 	 (pickOne list list init_min curBest , GameState {candidate=list,fbMap=fbm})
 	where 
 		list = pare (candidate gs) pitches y
 		init_min = 1330
 		fbm = 
 		curBest = []
+=======
+	 (pickOne list list init_min emptyList , GameState {candidate=list})
+	where 
+		list = pare (candidate gs) pitches y
+		init_min = 1330
+		emptyList = []
+>>>>>>> parent of b1281b6... Update Proj1.hs
 =======
 	 (pickOne list list init_min emptyList , GameState {candidate=list})
 	where 
