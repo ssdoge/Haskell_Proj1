@@ -23,7 +23,7 @@ combinations 0 _ = [[]]
 combinations n xs = [ xs !! i : x | i <- [0..(length xs)-1],
 						 x <- combinations (n-1) (drop (i+1) xs) ]
 
-listOfTarget = combinations 3 listOfPitch
+listOfTarget = combinations 3 listOfPitch	--a chord contains 3 pitches
 
 ------------------Display------------------------------------------------------
 
@@ -36,10 +36,11 @@ showPitch (Pitch n o) =	show n ++[fromJust $ lookup o $ map swap tableOfOctave]
 
 --change datatpye from String to Pitch
 --arguement x represents for Note, y represents for Octave
+--if input contains 2 qualified characters, return corresponding pitch,
+--else return Nothing
 toPitch :: String -> Maybe Pitch
 toPitch (x:y:[])
-	| elem x tableOfNote && elem y octaveList
-		= Just pitch
+	| elem x tableOfNote && elem y octaveList = Just pitch
  	| otherwise = toPitch "Nothing"
   	where
   	 pitch = Pitch (read [x]::Note) (fromJust $ lookup y tableOfOctave)
@@ -57,7 +58,7 @@ pitchCount (x:xs) y
 	| elem x y == True = 1 + pitchCount xs y
 	| otherwise = pitchCount xs y
 
---for a sorted [Pitch] using two-pointers method 
+--for a sorted [Pitch](sort by Note)using two-pointers method 
 noteCount :: [Pitch] -> [Pitch] -> Int
 noteCount [] _ = 0
 noteCount _ [] = 0
