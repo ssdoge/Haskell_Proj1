@@ -3,15 +3,7 @@ import Data.Maybe
 import Data.Tuple 
 import Data.List 
 import Data.Set (member, fromList, Set)
-<<<<<<< HEAD
-<<<<<<< HEAD
-import Data.Map (insertWith, toList, empty, elems, lookup Map)
-=======
-import Data.Map (insertWith, toList, empty, Map)
->>>>>>> parent of b1281b6... Update Proj1.hs
-=======
-import Data.Map (insertWith, toList, empty, Map)
->>>>>>> parent of b1281b6... Update Proj1.hs
+import Data.Map (insertWith, toList, empty, elems, Map)
 
 
 ------------------Definition of data-------------------------------------------
@@ -69,7 +61,6 @@ pitchCount [] _ = 0
 pitchCount (x:xs) y 
 	| elem x y == True = 1 + pitchCount xs y
 	| otherwise = pitchCount xs y
-
 -}
 pitchCount :: [Pitch] -> Set Pitch -> Int
 pitchCount [] _ = 0 
@@ -136,8 +127,6 @@ pare candidate x fb = filter (\a -> feedback x a == fb) candidate
 --a "loop" for finding then counting a certain feedback for a guess/chord
 --1st arg is a list recording a certain feedback and corresponding repeated 
 --number. 2rd arg is a feedback we want to join into the list 
-find_Count :: Map (Int, Int, Int) Int -> (Int, Int, Int) -> Map (Int, Int, Int) Int	
-find_Count map k = insertWith (\a b -> b+1) k 1 map
 
 
 --for a chord in candidate list, count all different possible feedbacks and 
@@ -147,28 +136,15 @@ find_Count map k = insertWith (\a b -> b+1) k 1 map
 chordCount :: [[Pitch]] -> [Pitch] -> Map (Int, Int, Int) Int  
 												-> Map (Int, Int, Int) Int
 chordCount [] _ map = map
-<<<<<<< HEAD
-<<<<<<< HEAD
-chordCount (x:xs) y map = let k = (Data.Map.lookup (x,y) fbMap) in
+chordCount (x:xs) y map = let k = (feedback x y) in
 	chordCount xs y (insertWith (\a b -> b+1) k 1 map)
-=======
-chordCount (x:xs) y map = let k = (feedback x y) in
-	chordCount xs y (find_Count map k)
->>>>>>> parent of b1281b6... Update Proj1.hs
-
-feedbackMap :: [Pitch] -> [Pitch] -> Map ([Pitch],[Pitch]) (Int, Int, Int) -> (Int, Int, Int)
-feedbackMap 
-=======
-chordCount (x:xs) y map = let k = (feedback x y) in
-	chordCount xs y (find_Count map k)
->>>>>>> parent of b1281b6... Update Proj1.hs
 
 --combine above two functions to give an evaluation for a certain chord
 expectedRemainNum :: [[Pitch]] -> [Pitch] -> Float
 expectedRemainNum list x =
-	sum (map (\(_, n) -> fromIntegral (n*n) / fromIntegral len) k)
+	sum (map (\n -> fromIntegral (n*n) / fromIntegral len) k)
 	where 
-		k = toList (chordCount list x empty)
+		k = elems (chordCount list x empty)
 		len = length k
 
 --pick a chord which is most likely to leave a smallest remaining candidate list
@@ -185,27 +161,8 @@ pickOne (x:xs) list min curBest
 --an integration for above all 
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 nextGuess (pitches, gs) y =
-<<<<<<< HEAD
-<<<<<<< HEAD
-	 (pickOne list list init_min curBest , GameState {candidate=list,fbMap=fbm})
+	 (pickOne list list init_min curBest , GameState {candidate=list})
 	where 
 		list = pare (candidate gs) pitches y
 		init_min = 1330
-		fbm = 
 		curBest = []
-=======
-	 (pickOne list list init_min emptyList , GameState {candidate=list})
-	where 
-		list = pare (candidate gs) pitches y
-		init_min = 1330
-		emptyList = []
->>>>>>> parent of b1281b6... Update Proj1.hs
-=======
-	 (pickOne list list init_min emptyList , GameState {candidate=list})
-	where 
-		list = pare (candidate gs) pitches y
-		init_min = 1330
-		emptyList = []
->>>>>>> parent of b1281b6... Update Proj1.hs
-
-
