@@ -74,7 +74,7 @@ noteCount ((Pitch n1 o1):xs) ((Pitch n2 o2):ys)
     | n1 < n2 = noteCount xs ((Pitch n2 o2):ys)
     | otherwise = noteCount ((Pitch n1 o1):xs) ys
 
---a counting for octave
+--a counting for octave, store the number of '1','2','3' to a,b,c separately
 counting :: [Pitch] -> [Int] -> [Int]
 counting [] x = x
 counting ((Pitch _ o):xs) [a, b, c]
