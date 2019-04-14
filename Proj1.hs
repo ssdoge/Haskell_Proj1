@@ -3,12 +3,12 @@
 --The purpose of this file is to implement both the guessing
 --and answering parts of a logical guessing game called 'The Game of Musician'
 
-module Proj1 (Pitch, toPitch, feedback, GameState, initialGuess, nextGuess) where
+module Proj1 (Pitch, toPitch, feedback,
+                    GameState, initialGuess, nextGuess) where
 import Data.Maybe
 import Data.Tuple (swap)
 import Data.List
 import Data.Map (insertWith, toList, empty, elems, Map)
-
 
 ------------------Definition of data-------------------------------------------
 
@@ -57,49 +57,33 @@ toPitch _ = Nothing
 
 ------------------Feedback-----------------------------------------------------
 
---count pitch using "elem", first arg is what we want to find, the second arg
---is a lookup table
-pitchCount :: [Pitch] -> [Pitch] -> Int
-pitchCount [] _ = 0
-pitchCount (x:xs) y
-    | elem x y == True = 1 + pitchCount xs y
-    | otherwise = pitchCount xs y
+--using '\\'' to exclude same elem in the list, since a chord has length of 3,
+--the param in function is fixed 3.
+elemCount :: (Ord a) => [a] -> [a] -> Int
+elemCount x y = lenOfInput - length (x \\ y)
+    where lenOfInput = 3
 
---for a sorted [Pitch](sort by Note)using two-pointers method
-noteCount :: [Pitch] -> [Pitch] -> Int
-noteCount [] _ = 0
-noteCount _ [] = 0
-noteCount ((Pitch n1 o1):xs) ((Pitch n2 o2):ys)
-    | n1 == n2 = 1 + noteCount xs ys
-    | n1 < n2 = noteCount xs ((Pitch n2 o2):ys)
-    | otherwise = noteCount ((Pitch n1 o1):xs) ys
-
---a counting for octave, store the number of '1','2','3' to a,b,c separately
-counting :: [Pitch] -> [Int] -> [Int]
-counting [] x = x
-counting ((Pitch _ o):xs) [a, b, c]
-    | o == One = counting xs [a+1, b, c]
-    | o == Two = counting xs [a, b+1, c]
-    | o == Three = counting xs [a, b, c+1]
-
---the min of corresponding positions is the repeated number, sum them
-octaveCount :: [Pitch] -> [Pitch] -> Int
-octaveCount x y = sum $ map (\(m, n) -> if m<n then m else n) $ zip a b
+--change a list of Pitches into a Note list and an Octave list
+toNOList :: [Pitch] -> ([Note],[Octave])
+toNOList [] = ([],[])
+toNOList ((Pitch n o):xs) = (n:noteList, o:octaveList)
     where
-        a = counting x [0,0,0]
-        b = counting y [0,0,0]
+        noteList = fst (toNOList xs)
+        octaveList = snd (toNOList xs)
 
 --feedback function
---since indentical pitches will be count again in octaveCount and noteCount,
---we should deduct them
+--since indentical pitches will be counted repeatedly when counting octaves
+--and notes, we should deduct them.
+--the param names represent their meaning
 feedback :: [Pitch] -> [Pitch] -> (Int, Int, Int)
-feedback target guess = (a, b-a, c-a)
+feedback target guess =
+    (numOfPitch, numOfNote - numOfPitch, numOfOctave - numOfPitch)
     where
-        a = pitchCount guess target
-        b = noteCount t g
-        t = sort target
-        g = sort guess
-        c = octaveCount target guess
+        numOfPitch = elemCount guess target
+        numOfNote = elemCount nt ng
+        numOfOctave = elemCount ot og
+        (nt,ot) = toNOList target
+        (ng,og) = toNOList guess
 
 ------------------Initial Guess------------------------------------------------
 
