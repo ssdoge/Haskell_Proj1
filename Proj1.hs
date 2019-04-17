@@ -3,6 +3,9 @@
 --The purpose of this file is to implement both the guessing
 --and answering parts of a logical guessing game called 'The Game of Musician'
 
+--this code is separated into four parts, as definition of data, display for
+--data, calculate feedback for two chords and guess a chord.
+
 module Proj1 (Pitch, toPitch, feedback,
                     GameState, initialGuess, nextGuess) where
 import Data.Maybe
@@ -11,6 +14,7 @@ import Data.List
 import Data.Map (insertWith, toList, empty, elems, Map)
 
 ------------------Definition of data-------------------------------------------
+--a pitch contains note and octave, and a game state store the possible target
 
 data Note = A | B | C | D | E | F | G deriving (Eq,Ord,Show,Read)
 data Octave = One | Two | Three deriving (Eq,Ord)
@@ -21,10 +25,10 @@ instance Show Pitch where show = showPitch
 
 ------------------Definition of candidate Target-------------------------------
 
---the list of candidate pitches
+--a list of all legal pitches, used to generate a chord
 listOfPitch = [(Pitch x y) | x <- [A,B,C,D,E,F,G], y <- [One, Two, Three]]
 
---generate combinations for Pitches
+--generate combinations from listOfPitches
 combinations :: Int -> [a] -> [[a]]
 combinations 0 _ = [[]]
 combinations n xs = [ xs !! i : x | i <- [0..(length xs)-1],
@@ -33,8 +37,9 @@ combinations n xs = [ xs !! i : x | i <- [0..(length xs)-1],
 listOfTarget = combinations 3 listOfPitch   --a chord contains 3 pitches
 
 ------------------Display------------------------------------------------------
+--contains show pitch method and transform a string to pitch method
 
---define the table for changing datatpye
+--define the table for changing datatpye from Octave to Char, vice versa
 tableOfOctave = [('1', One), ('2', Two), ('3', Three)]
 
 --show function for Pitch, use pairs for changing data
@@ -58,7 +63,8 @@ toPitch _ = Nothing
 ------------------Feedback-----------------------------------------------------
 
 --using '\\'' to exclude same elem in the list, since a chord has length of 3,
---the param in function is fixed 3.
+--the parameter in function is fixed 3. By deduct the length of complement,
+--we get the number of common elements.
 elemCount :: (Ord a) => [a] -> [a] -> Int
 elemCount x y = lenOfInput - length (x \\ y)
     where lenOfInput = 3
